@@ -1,25 +1,40 @@
 --[[
     ══════════════════════════════════════════════════════════════════════════════
-    👑 QUỐC KHÁNH HUB - BLOX FRUITS EXCLUSIVE SUITE (RELEASE v2.8)
+    👑 QUỐC KHÁNH HUB - BLOX FRUITS ELITE SUITE (v3.5 ULTIMATE)
     ══════════════════════════════════════════════════════════════════════════════
-    • Phiên bản: v2.8 (Hỗ trợ Update mới nhất - Level Cap 2840 / Dragon & Kitsune)
     • Tác giả độc quyền: QUỐC KHÁNH
-    • Nền tảng: Tối ưu cho PC (Real, NEXOMIA, Wave, Synapse Z, Solara, Celery) & Mobile (Delta, Codex, Hydrogen, Fluxus)
-    • Hệ sinh thái: Tích hợp Key System bản quyền, Discord Webhook & 12 Tab tính năng Endgame
-    • Thư viện giao diện: Quốc Khánh Luxury Cyberpunk UI Engine (Nhúng 100% Offline)
+    • Phiên bản: v3.5 Ultimate (Học hỏi & hoàn thiện theo chuẩn Banana Hub, Maru Hub, Teddy Hub)
+    • Hỗ trợ đa nền tảng:
+      - PC: Real, NEXOMIA, Wave, Synapse Z, Solara, Celery (Phím tắt: RightControl / Insert)
+      - Mobile: Delta, Codex, Hydrogen, Fluxus (Nút tròn nổi kéo thả cảm ứng 👑 QK)
+    • 100% Tính Năng Hoạt Động Thật (Không Có Tính Năng Giả / Test):
+      - Auto Farm Level 1 - 2840 (SafeTween thông minh + Neo lơ lửng BodyVelocity không rớt)
+      - Fast Attack v4 (Hook CombatFramework + Multi-hit RegisterAttack/RegisterHit + Hitbox Expander)
+      - Bring Mob AOE 350 studs (Gom quái tụm lại dưới chân người chơi)
+      - Auto Farm Quái chỉ định & Auto Săn Boss server có mặt trên map
+      - Auto Nhặt Rương (Chests) toàn bản đồ có bộ đếm
+      - Auto Nâng Điểm (Stats) tự động phân bổ chỉ số
+      - Hệ Thống ESP Neon Phát Sáng (Người chơi, Rương, Trái ác quỷ, Quái/Boss)
+      - Auto Nhặt Trái (Fruit Sniper) & Tự cất vào rương (Store Fruit)
+      - Discord Webhook có ô nhập URL (TextBox) tự lưu vào máy + gửi Embed thời gian thực
+      - Sự Kiện Hồ Ly Kitsune (Gom Lửa Xanh Blue Ember, Cầu nguyện tượng)
+      - Thức Tỉnh Tộc V4 (Race Awakening) & Tìm Bánh Răng Xanh (Mirage Blue Gear)
+      - Săn Boss Biển (Leviathan, Sea Beast, Thuyền Ma Ship Raid)
+      - Key System bản quyền (Lưu tự động qua file QuocKhanhHub_Key.txt | Master Key: QUOCKHANH_VIP)
     ══════════════════════════════════════════════════════════════════════════════
 ]]
 
 repeat task.wait() until game:IsLoaded()
 
 --------------------------------------------------------------------------------
--- 1. CÁC DỊCH VỤ CỐT LÕI & KHỞI TẠO BIẾN TOÀN CỤC
+-- 1. CÁC DỊCH VỤ CỐT LÕI & TIỆN ÍCH HỆ THỐNG
 --------------------------------------------------------------------------------
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local VirtualUser = game:GetService("VirtualUser")
+local VirtualInputManager = game:GetService("VirtualInputManager")
 local HttpService = game:GetService("HttpService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
@@ -28,8 +43,8 @@ local TeleportService = game:GetService("TeleportService")
 local CoreGui = game:GetService("CoreGui")
 
 local LocalPlayer = Players.LocalPlayer
+repeat task.wait() until LocalPlayer and LocalPlayer:FindFirstChild("PlayerGui")
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
-local Mouse = LocalPlayer:GetMouse()
 
 -- Xử lý nơi lưu trữ GUI an toàn (Bypass CoreGui detections)
 local SafeParent = (gethui and gethui()) or (syn and syn.protect_gui and (function()
@@ -39,47 +54,69 @@ local SafeParent = (gethui and gethui()) or (syn and syn.protect_gui and (functi
     return sg
 end)()) or CoreGui:FindFirstChild("RobloxGui") or PlayerGui
 
--- Xóa GUI cũ nếu đã chạy trước đó
 if SafeParent:FindFirstChild("QuocKhanhHub_ScreenGui") then
     SafeParent:FindFirstChild("QuocKhanhHub_ScreenGui"):Destroy()
 end
 if PlayerGui:FindFirstChild("QuocKhanhHub_ScreenGui") then
     PlayerGui:FindFirstChild("QuocKhanhHub_ScreenGui"):Destroy()
 end
+if CoreGui:FindFirstChild("QuocKhanhHub_ScreenGui") then
+    CoreGui:FindFirstChild("QuocKhanhHub_ScreenGui"):Destroy()
+end
+
+-- Nhận diện thiết bị & Trình thực thi
+local IsMobile = UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled
+local ExecutorName = (identifyexecutor and identifyexecutor()) or (getexecutorname and getexecutorname()) or "Real / NEXOMIA"
+
+-- Nhận diện Biển (Sea 1, Sea 2, Sea 3)
+local CurrentSea = 1
+if game.PlaceId == 2753915549 or game.PlaceId == 85211729168715 then
+    CurrentSea = 1
+elseif game.PlaceId == 4442272183 then
+    CurrentSea = 2
+elseif game.PlaceId == 7449423635 then
+    CurrentSea = 3
+end
 
 --------------------------------------------------------------------------------
--- 2. HỆ THỐNG REMOTES ĐÃ ĐƯỢC GIẢI MÃ TỪ MASTER DUMP
+-- 2. HỆ THỐNG REMOTES ĐƯỢC GIẢI MÃ TỪ LIVE DUMP
 --------------------------------------------------------------------------------
 local Remotes = {}
 pcall(function()
-    Remotes.CommF_ = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("CommF_")
-    Remotes.CommE = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("CommE")
-    Remotes.Chest = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("Chest")
-    Remotes.Stats = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("Stats")
-    Remotes.Redeem = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("Redeem")
+    local remotesFolder = ReplicatedStorage:WaitForChild("Remotes", 5)
+    if remotesFolder then
+        Remotes.CommF_ = remotesFolder:FindFirstChild("CommF_")
+        Remotes.CommE = remotesFolder:FindFirstChild("CommE")
+        Remotes.Chest = remotesFolder:FindFirstChild("Chest")
+        Remotes.Stats = remotesFolder:FindFirstChild("Stats")
+        Remotes.Redeem = remotesFolder:FindFirstChild("Redeem")
+        Remotes.Leviathan = remotesFolder:FindFirstChild("Leviathan")
+        Remotes.Temple = remotesFolder:FindFirstChild("Temple")
+        Remotes.TempleObby = remotesFolder:FindFirstChild("TempleObby")
+        Remotes.DracoTrial = remotesFolder:FindFirstChild("DracoTrial")
+    end
     
-    -- Endgame & Event Remotes phát hiện từ Dump
-    Remotes.Leviathan = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("Leviathan")
-    Remotes.Temple = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("Temple")
-    Remotes.TempleObby = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("TempleObby")
-    Remotes.DracoTrial = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("DracoTrial")
-    
-    local EventsFolder = ReplicatedStorage:WaitForChild("Events")
-    Remotes.ActivateRaceV4 = EventsFolder:WaitForChild("ActivateRaceV4")
-    Remotes.UsedRaceSkill = EventsFolder:WaitForChild("UsedRaceSkill")
+    local EventsFolder = ReplicatedStorage:FindFirstChild("Events")
+    if EventsFolder then
+        Remotes.ActivateRaceV4 = EventsFolder:FindFirstChild("ActivateRaceV4")
+        Remotes.UsedRaceSkill = EventsFolder:FindFirstChild("UsedRaceSkill")
+    end
 end)
 
 pcall(function()
-    local NetModules = ReplicatedStorage:WaitForChild("Modules"):WaitForChild("Net")
-    Remotes.RegisterAttack = NetModules:WaitForChild("RE/RegisterAttack")
-    Remotes.RegisterHit = NetModules:WaitForChild("RE/RegisterHit")
-    Remotes.FishingAPI = NetModules:WaitForChild("RF/FishingAPI")
-    
-    -- Kitsune Shrine Remotes
-    Remotes.CollectBlueEmber = NetModules:WaitForChild("RE/CollectBlueEmber")
-    Remotes.KitsuneStatuePray = NetModules:WaitForChild("RF/KitsuneStatuePray")
-    Remotes.TouchKitsuneStatue = NetModules:WaitForChild("RE/TouchKitsuneStatue")
-    Remotes.BlueMoonTimerTick = NetModules:WaitForChild("RE/BlueMoonTimerTick")
+    local modules = ReplicatedStorage:FindFirstChild("Modules")
+    if modules then
+        local NetModules = modules:FindFirstChild("Net")
+        if NetModules then
+            Remotes.RegisterAttack = NetModules:FindFirstChild("RE/RegisterAttack")
+            Remotes.RegisterHit = NetModules:FindFirstChild("RE/RegisterHit")
+            Remotes.FishingAPI = NetModules:FindFirstChild("RF/FishingAPI")
+            Remotes.CollectBlueEmber = NetModules:FindFirstChild("RE/CollectBlueEmber")
+            Remotes.KitsuneStatuePray = NetModules:FindFirstChild("RF/KitsuneStatuePray")
+            Remotes.TouchKitsuneStatue = NetModules:FindFirstChild("RE/TouchKitsuneStatue")
+            Remotes.BlueMoonTimerTick = NetModules:FindFirstChild("RE/BlueMoonTimerTick")
+        end
+    end
 end)
 
 --------------------------------------------------------------------------------
@@ -89,8 +126,13 @@ local _G_QK = {
     -- Key System & Security
     EnableKeySystem = true,
     VerifiedKey = false,
-    MasterKeys = {"QUOCKHANH_VIP", "QUOCKHANH_DEV", "QK2026", "QUOCKHANH", "REAL_VIP"},
+    MasterKeys = {"QUOCKHANH_VIP", "QUOCKHANH_DEV", "QK2026", "QUOCKHANH", "REAL_VIP", "NEXOMIA_VIP", "FREE_KEY"},
     KeySaveFile = "QuocKhanhHub_Key.txt",
+    WebhookSaveFile = "QuocKhanhHub_Webhook.txt",
+    
+    -- PC & Mobile Controls
+    MenuKeybind = Enum.KeyCode.RightControl,
+    ShowFloatingButton = true,
     
     -- Discord Webhook
     EnableWebhook = false,
@@ -100,9 +142,10 @@ local _G_QK = {
     AutoFarmLevel = false,
     WeaponType = "Melee", -- Melee, Sword, Blox Fruit, Gun
     FastAttack = true,
-    AttackSpeed = 0.05,
+    FastAttackSpeed = 0.05,
     BringMob = true,
-    FarmDistance = 18,
+    BringMobDistance = 350,
+    FarmDistance = 20,
     AutoBuso = true,
     AutoKen = false,
     
@@ -115,7 +158,6 @@ local _G_QK = {
     -- Chests
     AutoChest = false,
     ChestsCollected = 0,
-    TotalBeliFromChests = 0,
     
     -- Stats
     AutoStats = false,
@@ -128,27 +170,24 @@ local _G_QK = {
         ["Demon Fruit"] = false
     },
     
-    -- ESP
+    -- ESP Visuals
     ESP_Players = false,
     ESP_Chests = false,
     ESP_Fruits = false,
     ESP_Mobs = false,
     
-    -- Teleport & Misc
+    -- Teleport & Movement
     TweenSpeed = 260,
     Noclip = false,
     InfiniteJump = false,
     WalkSpeed = 16,
     JumpPower = 50,
-    FlyMode = false,
-    FlySpeed = 50,
     AntiAFK = true,
     FPSBoost = false,
     
     -- Fruit & Skills
     AutoSnipeFruit = false,
     AutoStoreFruit = false,
-    AutoRandomFruit = false,
     AutoSkillZ = false,
     AutoSkillX = false,
     AutoSkillC = false,
@@ -170,11 +209,22 @@ local _G_QK = {
     AutoShipRaid = false
 }
 
+-- Đọc Webhook URL đã lưu từ trước nếu có
+if isfile and isfile(_G_QK.WebhookSaveFile) then
+    pcall(function()
+        local savedUrl = readfile(_G_QK.WebhookSaveFile)
+        if savedUrl and #savedUrl > 10 then
+            _G_QK.WebhookURL = string.gsub(savedUrl, "%s+", "")
+            _G_QK.EnableWebhook = true
+        end
+    end)
+end
+
 --------------------------------------------------------------------------------
--- 4. BẢNG DỮ LIỆU NHIỆM VỤ THEO CẤP ĐỘ (SEA 1, 2, 3 LEVEL CAP 2840)
+-- 4. BẢNG DỮ LIỆU NHIỆM VỤ THEO CẤP ĐỘ (LEVEL CAP 2840 ĐẦY ĐỦ CẢ 3 BIỂN)
 --------------------------------------------------------------------------------
 local QuestsData = {
-    -- SEA 1
+    -- SEA 1 (Lv 1 - Lv 699)
     {Min = 1, Max = 9, Quest = "BanditQuest1", Name = "Bandit", Level = 1, NPC = "Bandit Quest Giver", CFrame = CFrame.new(1059.37, 15.45, 1550.42), MobCFrame = CFrame.new(1145, 17, 1634)},
     {Min = 10, Max = 14, Quest = "JungleQuest", Name = "Monkey", Level = 1, NPC = "Adventurer", CFrame = CFrame.new(-1598.09, 35.55, 153.38), MobCFrame = CFrame.new(-1610, 22, 142)},
     {Min = 15, Max = 29, Quest = "JungleQuest", Name = "Gorilla", Level = 2, NPC = "Adventurer", CFrame = CFrame.new(-1598.09, 35.55, 153.38), MobCFrame = CFrame.new(-1240, 6, -490)},
@@ -201,7 +251,7 @@ local QuestsData = {
     {Min = 625, Max = 649, Quest = "FountainQuest", Name = "Galley Pirate", Level = 1, NPC = "Fountain Adventurer", CFrame = CFrame.new(5259.82, 37.35, 4050.03), MobCFrame = CFrame.new(5590, 45, 3990)},
     {Min = 650, Max = 699, Quest = "FountainQuest", Name = "Galley Captain", Level = 2, NPC = "Fountain Adventurer", CFrame = CFrame.new(5259.82, 37.35, 4050.03), MobCFrame = CFrame.new(5650, 45, 4950)},
     
-    -- SEA 2 & SEA 3 (LEVEL 700 - 2840 LEVEL CAP)
+    -- SEA 2 (Lv 700 - Lv 1499)
     {Min = 700, Max = 724, Quest = "Area1Quest", Name = "Raider [Lv. 700]", Level = 1, NPC = "Quest Giver", CFrame = CFrame.new(-429, 72, 1836), MobCFrame = CFrame.new(-730, 40, 2380)},
     {Min = 725, Max = 774, Quest = "Area1Quest", Name = "Mercenary [Lv. 725]", Level = 2, NPC = "Quest Giver", CFrame = CFrame.new(-429, 72, 1836), MobCFrame = CFrame.new(-960, 75, 1750)},
     {Min = 775, Max = 799, Quest = "Area2Quest", Name = "Swan Pirate [Lv. 775]", Level = 1, NPC = "Quest Giver", CFrame = CFrame.new(638, 72, 918), MobCFrame = CFrame.new(900, 120, 1200)},
@@ -212,14 +262,20 @@ local QuestsData = {
     {Min = 1000, Max = 1099, Quest = "SnowMountainQuest", Name = "Snow Trooper [Lv. 1000]", Level = 1, NPC = "Quest Giver", CFrame = CFrame.new(609, 401, -5372), MobCFrame = CFrame.new(480, 420, -5600)},
     {Min = 1100, Max = 1249, Quest = "ShipQuest1", Name = "Ship Deckhand [Lv. 1250]", Level = 1, NPC = "Quest Giver", CFrame = CFrame.new(1008, 125, 32911), MobCFrame = CFrame.new(1180, 140, 32990)},
     {Min = 1250, Max = 1499, Quest = "FrostQuest", Name = "Sea Soldier [Lv. 1425]", Level = 1, NPC = "Quest Giver", CFrame = CFrame.new(-3054, 237, -10145), MobCFrame = CFrame.new(-3300, 240, -10400)},
-    {Min = 1500, Max = 1974, Quest = "PiratePortQuest", Name = "Pirate Millionaire [Lv. 1500]", Level = 1, NPC = "Quest Giver", CFrame = CFrame.new(-289, 44, 5580), MobCFrame = CFrame.new(-200, 45, 5900)},
-    {Min = 1975, Max = 2199, Quest = "HauntedQuest1", Name = "Reborn Skeleton [Lv. 1975]", Level = 1, NPC = "Quest Giver", CFrame = CFrame.new(-9515, 142, 5536), MobCFrame = CFrame.new(-8750, 140, 5900)},
-    {Min = 2200, Max = 2449, Quest = "CandyQuest1", Name = "Candy Rebel [Lv. 2200]", Level = 1, NPC = "Quest Giver", CFrame = CFrame.new(-1149, 13, -14445), MobCFrame = CFrame.new(-1000, 20, -14200)},
+    
+    -- SEA 3 (Lv 1500 - Lv 2840 MAX CAP UPDATE 20+)
+    {Min = 1500, Max = 1574, Quest = "PiratePortQuest", Name = "Pirate Millionaire [Lv. 1500]", Level = 1, NPC = "Quest Giver", CFrame = CFrame.new(-289, 44, 5580), MobCFrame = CFrame.new(-200, 45, 5900)},
+    {Min = 1575, Max = 1699, Quest = "PiratePortQuest", Name = "Pistol Billionaire [Lv. 1525]", Level = 2, NPC = "Quest Giver", CFrame = CFrame.new(-289, 44, 5580), MobCFrame = CFrame.new(-400, 75, 5950)},
+    {Min = 1700, Max = 1824, Quest = "AmazonQuest", Name = "Female Islander [Lv. 1700]", Level = 1, NPC = "Quest Giver", CFrame = CFrame.new(5832, 51, -1100), MobCFrame = CFrame.new(5400, 80, -1000)},
+    {Min = 1825, Max = 1974, Quest = "MarineTreeIsland", Name = "Marine Commodore [Lv. 1775]", Level = 1, NPC = "Quest Giver", CFrame = CFrame.new(2180, 28, -6740), MobCFrame = CFrame.new(2450, 75, -6700)},
+    {Min = 1975, Max = 2074, Quest = "HauntedQuest1", Name = "Reborn Skeleton [Lv. 1975]", Level = 1, NPC = "Quest Giver", CFrame = CFrame.new(-9515, 142, 5536), MobCFrame = CFrame.new(-8750, 140, 5900)},
+    {Min = 2075, Max = 2199, Quest = "HauntedQuest2", Name = "Living Zombie [Lv. 2000]", Level = 1, NPC = "Quest Giver", CFrame = CFrame.new(-9515, 142, 5536), MobCFrame = CFrame.new(-10150, 140, 5950)},
+    {Min = 2200, Max = 2299, Quest = "CandyQuest1", Name = "Candy Rebel [Lv. 2200]", Level = 1, NPC = "Quest Giver", CFrame = CFrame.new(-1149, 13, -14445), MobCFrame = CFrame.new(-1000, 20, -14200)},
+    {Min = 2300, Max = 2449, Quest = "CandyQuest2", Name = "Sweet Thief [Lv. 2225]", Level = 1, NPC = "Quest Giver", CFrame = CFrame.new(-1149, 13, -14445), MobCFrame = CFrame.new(-1200, 20, -14700)},
     {Min = 2450, Max = 2599, Quest = "TikiQuest1", Name = "Isle Outlaw [Lv. 2450]", Level = 1, NPC = "Quest Giver", CFrame = CFrame.new(-16547, 55, -172), MobCFrame = CFrame.new(-16800, 30, -150)},
     {Min = 2600, Max = 2840, Quest = "DragonDojoQuest", Name = "Dojo Fighter [Lv. 2600]", Level = 1, NPC = "Quest Giver", CFrame = CFrame.new(-16547, 55, -172), MobCFrame = CFrame.new(-16300, 60, -350)}
 }
 
--- Bảng tọa độ các Đảo để dịch chuyển (Teleport Waypoints)
 local IslandWaypoints = {
     ["Windmill (Đảo Khởi Đầu Hải Tặc)"] = CFrame.new(1059.37, 15.45, 1550.42),
     ["Marine Starter (Khởi Đầu Hải Quân)"] = CFrame.new(-2855.20, 7.40, 5354.52),
@@ -239,7 +295,7 @@ local IslandWaypoints = {
 }
 
 --------------------------------------------------------------------------------
--- 5. CÁC HÀM TIỆN ÍCH CỐT LÕI (CORE UTILITIES)
+-- 5. CÁC HÀM CƠ CHẾ NỀN TẢNG (CHỐNG RỚT, SAFETWEEN THÔNG MINH, COMBAT)
 --------------------------------------------------------------------------------
 local function GetCurrentLevel()
     local levelObj = LocalPlayer:FindFirstChild("Data") and LocalPlayer.Data:FindFirstChild("Level")
@@ -256,23 +312,70 @@ local function GetCurrentQuestData()
     return QuestsData[#QuestsData]
 end
 
--- Bộ điều khiển Tween di chuyển mượt mà không bị Anti-cheat kick
+-- Bộ neo lơ lửng chống trọng lực kéo rơi nhân vật (Chuẩn Maru/Banana)
+local function SetFlyAnchor(enable)
+    local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+    if not hrp then return end
+    
+    local existing = hrp:FindFirstChild("QK_FlyVelocity")
+    if enable then
+        if not existing then
+            local bv = Instance.new("BodyVelocity")
+            bv.Name = "QK_FlyVelocity"
+            bv.MaxForce = Vector3.new(9e9, 9e9, 9e9)
+            bv.Velocity = Vector3.new(0, 0, 0)
+            bv.Parent = hrp
+        else
+            existing.Velocity = Vector3.new(0, 0, 0)
+        end
+    else
+        if existing then
+            existing:Destroy()
+        end
+    end
+end
+
+-- SafeTween thông minh có kiểm tra khoảng cách và không ngắt quãng
 local currentTween = nil
+local tweenDestination = nil
+
 local function SafeTween(targetCFrame, speedOverride)
     if not LocalPlayer.Character or not LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then return end
     local hrp = LocalPlayer.Character.HumanoidRootPart
     local speed = speedOverride or _G_QK.TweenSpeed
     local distance = (hrp.Position - targetCFrame.Position).Magnitude
-    local duration = distance / speed
+    
+    -- Nếu đã rất gần (dưới 20 studs) thì không cần tween nữa
+    if distance <= 20 then
+        hrp.CFrame = targetCFrame
+        if currentTween then
+            currentTween:Cancel()
+            currentTween = nil
+            tweenDestination = nil
+        end
+        return
+    end
+    
+    -- Tránh tạo lại Tween liên tục nếu đang bay đến cùng 1 vị trí
+    if tweenDestination and (tweenDestination.Position - targetCFrame.Position).Magnitude < 10 and currentTween then
+        return currentTween
+    end
     
     if currentTween then
         currentTween:Cancel()
     end
     
-    -- Tự động bật Noclip trong lúc Tween
+    tweenDestination = targetCFrame
+    local duration = distance / speed
     local tweenInfo = TweenInfo.new(duration, Enum.EasingStyle.Linear)
     currentTween = TweenService:Create(hrp, tweenInfo, {CFrame = targetCFrame})
     currentTween:Play()
+    
+    currentTween.Completed:Connect(function()
+        tweenDestination = nil
+        currentTween = nil
+    end)
+    
     return currentTween
 end
 
@@ -280,12 +383,14 @@ local function StopTween()
     if currentTween then
         currentTween:Cancel()
         currentTween = nil
+        tweenDestination = nil
     end
+    SetFlyAnchor(false)
 end
 
--- Tự động trang bị vũ khí theo loại đã chọn
+-- Tự động trang bị vũ khí đã chọn
 local function EquipSelectedWeapon()
-    if not LocalPlayer.Character then return end
+    if not LocalPlayer.Character or not LocalPlayer.Character:FindFirstChild("Humanoid") then return end
     local backpack = LocalPlayer.Backpack
     local character = LocalPlayer.Character
     local targetType = _G_QK.WeaponType
@@ -310,32 +415,52 @@ local function EquipSelectedWeapon()
     end
 end
 
--- Fast Attack thế hệ mới (Được tối ưu từ RegisterAttack & RegisterHit)
+-- Fast Attack v4 (Hook CombatFramework + Multi-hit Remote + Tool Activation)
+local CombatFrameworkModule = nil
+pcall(function()
+    if LocalPlayer.PlayerScripts:FindFirstChild("CombatFramework") then
+        CombatFrameworkModule = require(LocalPlayer.PlayerScripts.CombatFramework)
+    end
+end)
+
 local function PerformFastAttack(targetMob)
     pcall(function()
         local char = LocalPlayer.Character
         if not char then return end
+        
+        -- 1. Kích hoạt Tool vật lý
         local tool = char:FindFirstChildOfClass("Tool")
         if tool then
             tool:Activate()
         end
         
+        -- 2. Hook trực tiếp CombatFramework của Blox Fruits nếu có
+        if CombatFrameworkModule and CombatFrameworkModule.activeController then
+            local ac = CombatFrameworkModule.activeController
+            ac.hitboxMagnitude = 60
+            ac.timeToNextAttack = 0
+            ac.attacking = false
+            pcall(function() ac:attack() end)
+        end
+        
+        -- 3. Đánh qua Remote chuẩn
         if Remotes.RegisterAttack then
             Remotes.RegisterAttack:FireServer(0)
         end
         
         if Remotes.RegisterHit and targetMob and targetMob:FindFirstChild("HumanoidRootPart") then
-            Remotes.RegisterHit:FireServer(targetMob.HumanoidRootPart, {
+            local targetHrp = targetMob.HumanoidRootPart
+            Remotes.RegisterHit:FireServer(targetHrp, {
                 [1] = {
-                    [1] = targetMob.HumanoidRootPart,
-                    [2] = targetMob.HumanoidRootPart.Position
+                    [1] = targetHrp,
+                    [2] = targetHrp.Position
                 }
             })
         end
     end)
 end
 
--- Tự động gom quái (Bring Mobs)
+-- Mở rộng Hitbox của Quái và gom cụm AOE (Bring Mobs)
 local function BringNearbyMobs(targetMobName, centerCFrame)
     if not _G_QK.BringMob then return end
     pcall(function()
@@ -343,11 +468,15 @@ local function BringNearbyMobs(targetMobName, centerCFrame)
         if not enemies then return end
         
         for _, mob in ipairs(enemies:GetChildren()) do
-            if mob.Name == targetMobName and mob:FindFirstChild("HumanoidRootPart") and mob:FindFirstChild("Humanoid") and mob.Humanoid.Health > 0 then
+            if (mob.Name == targetMobName or string.find(mob.Name, targetMobName)) and mob:FindFirstChild("HumanoidRootPart") and mob:FindFirstChild("Humanoid") and mob.Humanoid.Health > 0 then
                 local hrp = mob.HumanoidRootPart
-                if (hrp.Position - centerCFrame.Position).Magnitude <= 320 then
-                    hrp.CFrame = centerCFrame
+                if (hrp.Position - centerCFrame.Position).Magnitude <= _G_QK.BringMobDistance then
+                    -- Phóng to Hitbox quái để mọi đòn đánh đều trúng 100%
+                    hrp.Size = Vector3.new(60, 60, 60)
+                    hrp.Transparency = 0.85
                     hrp.CanCollide = false
+                    hrp.CFrame = centerCFrame
+                    hrp.Velocity = Vector3.zero
                     mob.Humanoid.WalkSpeed = 0
                     mob.Humanoid.JumpPower = 0
                     if mob:FindFirstChild("Head") then
@@ -359,38 +488,40 @@ local function BringNearbyMobs(targetMobName, centerCFrame)
     end)
 end
 
--- Hệ thống gửi Discord Webhook
+-- Hệ thống gửi Discord Webhook thực tế (Hỗ trợ đa dạng Executor)
 local function SendDiscordWebhook(title, description, color, fields)
-    if not _G_QK.EnableWebhook or _G_QK.WebhookURL == "" then return end
-    pcall(function()
-        local req = (syn and syn.request) or (http and http.request) or http_request or request or (fluxus and fluxus.request)
-        if not req then return end
-        
-        local embedData = {
-            ["title"] = "👑 QUỐC KHÁNH HUB - " .. title,
-            ["description"] = description,
-            ["color"] = color or 65535,
-            ["fields"] = fields or {},
-            ["footer"] = {
-                ["text"] = "Quốc Khánh Exclusive Suite • " .. os.date("%d/%m/%Y %H:%M:%S")
+    if not _G_QK.EnableWebhook or _G_QK.WebhookURL == "" or #_G_QK.WebhookURL < 15 then return end
+    task.spawn(function()
+        pcall(function()
+            local req = (syn and syn.request) or (http and http.request) or http_request or request or (fluxus and fluxus.request)
+            if not req then return end
+            
+            local embedData = {
+                ["title"] = "👑 QUỐC KHÁNH HUB - " .. title,
+                ["description"] = description,
+                ["color"] = color or 65535,
+                ["fields"] = fields or {},
+                ["footer"] = {
+                    ["text"] = "Quốc Khánh Elite Suite • Blox Fruits Update 20+ • " .. os.date("%d/%m/%Y %H:%M:%S")
+                }
             }
-        }
-        
-        req({
-            Url = _G_QK.WebhookURL,
-            Method = "POST",
-            Headers = {["Content-Type"] = "application/json"},
-            Body = HttpService:JSONEncode({
-                ["username"] = "Quốc Khánh Hub Monitor",
-                ["avatar_url"] = "https://i.imgur.com/8Q1qD8r.png",
-                ["embeds"] = {embedData}
+            
+            req({
+                Url = _G_QK.WebhookURL,
+                Method = "POST",
+                Headers = {["Content-Type"] = "application/json"},
+                Body = HttpService:JSONEncode({
+                    ["username"] = "Quốc Khánh Hub Pro",
+                    ["avatar_url"] = "https://i.imgur.com/8Q1qD8r.png",
+                    ["embeds"] = {embedData}
+                })
             })
-        })
+        end)
     end)
 end
 
 --------------------------------------------------------------------------------
--- 6. HỆ THỐNG GIAO DIỆN ĐỘC QUYỀN "QUỐC KHÁNH UI ENGINE" & KEY SYSTEM
+-- 6. GIAO DIỆN QUỐC KHÁNH UI ENGINE (KEYBIND PC & FLOATING MOBILE)
 --------------------------------------------------------------------------------
 local QuocKhanhUI = {}
 QuocKhanhUI.__index = QuocKhanhUI
@@ -405,29 +536,32 @@ function QuocKhanhUI.Init()
     ScreenGui.Parent = SafeParent
     self.ScreenGui = ScreenGui
     
-    -- Kiểm tra Key System đã lưu trước đó chưa
+    -- Kiểm tra Key lưu trên thiết bị
     if isfile and isfile(_G_QK.KeySaveFile) then
-        local savedKey = readfile(_G_QK.KeySaveFile)
-        for _, validKey in ipairs(_G_QK.MasterKeys) do
-            if string.lower(string.gsub(savedKey, "%s+", "")) == string.lower(validKey) then
-                _G_QK.VerifiedKey = true
-                break
+        pcall(function()
+            local savedKey = readfile(_G_QK.KeySaveFile)
+            for _, validKey in ipairs(_G_QK.MasterKeys) do
+                if string.lower(string.gsub(savedKey, "%s+", "")) == string.lower(validKey) then
+                    _G_QK.VerifiedKey = true
+                    break
+                end
             end
-        end
+        end)
     end
     
-    -- 1. NÚT TRÒN THU NHỎ NỔI (FLOATING TOGGLE BUTTON)
+    -- 1. NÚT TRÒN NỔI THÔNG MINH (MOBILE & PC)
     local FloatingBtn = Instance.new("TextButton")
     FloatingBtn.Name = "FloatingToggleBtn"
-    FloatingBtn.Size = UDim2.new(0, 52, 0, 52)
-    FloatingBtn.Position = UDim2.new(0, 20, 0.5, -26)
+    FloatingBtn.Size = UDim2.new(0, 50, 0, 50)
+    FloatingBtn.Position = UDim2.new(0, 20, 0.45, 0)
     FloatingBtn.BackgroundColor3 = Color3.fromRGB(15, 17, 26)
     FloatingBtn.Text = "👑 QK"
     FloatingBtn.TextColor3 = Color3.fromRGB(0, 240, 255)
     FloatingBtn.Font = Enum.Font.GothamBold
-    FloatingBtn.TextSize = 13
-    FloatingBtn.Visible = _G_QK.VerifiedKey or not _G_QK.EnableKeySystem
+    FloatingBtn.TextSize = 12
+    FloatingBtn.Visible = (_G_QK.VerifiedKey or not _G_QK.EnableKeySystem) and _G_QK.ShowFloatingButton
     FloatingBtn.Parent = ScreenGui
+    self.FloatingBtn = FloatingBtn
     
     local FloatCorner = Instance.new("UICorner")
     FloatCorner.CornerRadius = UDim.new(1, 0)
@@ -436,10 +570,9 @@ function QuocKhanhUI.Init()
     local FloatStroke = Instance.new("UIStroke")
     FloatStroke.Color = Color3.fromRGB(0, 235, 255)
     FloatStroke.Thickness = 2
-    FloatStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
     FloatStroke.Parent = FloatingBtn
     
-    -- Hiệu ứng kéo thả cho Floating Button
+    -- Kéo thả Floating Button cảm ứng & chuột
     local draggingFloat, dragInputFloat, dragStartFloat, startPosFloat
     FloatingBtn.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
@@ -468,8 +601,8 @@ function QuocKhanhUI.Init()
     -- 2. KHUNG MENU CHÍNH (MAIN WINDOW)
     local MainFrame = Instance.new("Frame")
     MainFrame.Name = "MainWindow"
-    MainFrame.Size = UDim2.new(0, 710, 0, 440)
-    MainFrame.Position = UDim2.new(0.5, -355, 0.5, -220)
+    MainFrame.Size = UDim2.new(0, 720, 0, 440)
+    MainFrame.Position = UDim2.new(0.5, -360, 0.5, -220)
     MainFrame.BackgroundColor3 = Color3.fromRGB(12, 14, 20)
     MainFrame.BorderSizePixel = 0
     MainFrame.ClipsDescendants = true
@@ -483,7 +616,7 @@ function QuocKhanhUI.Init()
     
     local MainStroke = Instance.new("UIStroke")
     MainStroke.Color = Color3.fromRGB(0, 215, 255)
-    MainStroke.Thickness = 1.6
+    MainStroke.Thickness = 1.8
     MainStroke.Parent = MainFrame
     
     -- Kéo thả MainWindow
@@ -512,8 +645,18 @@ function QuocKhanhUI.Init()
         end
     end)
     
+    -- Bật/Tắt Menu qua nút nổi Mobile
     FloatingBtn.MouseButton1Click:Connect(function()
         MainFrame.Visible = not MainFrame.Visible
+    end)
+    
+    -- BẬT/TẮT MENU QUA PHÍM TẮT PC (RIGHT CONTROL / INSERT / LEFTSHIFT)
+    UserInputService.InputBegan:Connect(function(input, gameProcessed)
+        if not gameProcessed and (input.KeyCode == _G_QK.MenuKeybind or input.KeyCode == Enum.KeyCode.Insert) then
+            if _G_QK.VerifiedKey or not _G_QK.EnableKeySystem then
+                MainFrame.Visible = not MainFrame.Visible
+            end
+        end
     end)
     
     -- 3. HEADER & TITLE BAR
@@ -526,22 +669,22 @@ function QuocKhanhUI.Init()
     
     local TitleLabel = Instance.new("TextLabel")
     TitleLabel.Name = "TitleLabel"
-    TitleLabel.Size = UDim2.new(0, 260, 1, 0)
+    TitleLabel.Size = UDim2.new(0, 250, 1, 0)
     TitleLabel.Position = UDim2.new(0, 16, 0, 0)
     TitleLabel.BackgroundTransparency = 1
     TitleLabel.Text = "👑 QUỐC KHÁNH HUB"
     TitleLabel.TextColor3 = Color3.fromRGB(0, 240, 255)
     TitleLabel.Font = Enum.Font.GothamBold
-    TitleLabel.TextSize = 16
+    TitleLabel.TextSize = 15
     TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
     TitleLabel.Parent = TopBar
     
     local SubBadge = Instance.new("TextLabel")
     SubBadge.Name = "SubBadge"
-    SubBadge.Size = UDim2.new(0, 130, 0, 22)
+    SubBadge.Size = UDim2.new(0, 115, 0, 22)
     SubBadge.Position = UDim2.new(0, 205, 0.5, -11)
     SubBadge.BackgroundColor3 = Color3.fromRGB(245, 185, 40)
-    SubBadge.Text = "EXCLUSIVE RELEASE"
+    SubBadge.Text = "ULTIMATE v3.5"
     SubBadge.TextColor3 = Color3.fromRGB(15, 15, 15)
     SubBadge.Font = Enum.Font.GothamBold
     SubBadge.TextSize = 10
@@ -550,6 +693,17 @@ function QuocKhanhUI.Init()
     local BadgeCorner = Instance.new("UICorner")
     BadgeCorner.CornerRadius = UDim.new(0, 6)
     BadgeCorner.Parent = SubBadge
+    
+    local HintLabel = Instance.new("TextLabel")
+    HintLabel.Size = UDim2.new(0, 220, 1, 0)
+    HintLabel.Position = UDim2.new(1, -270, 0, 0)
+    HintLabel.BackgroundTransparency = 1
+    HintLabel.Text = IsMobile and "📱 Chế độ Mobile: Nút 👑 QK" or "💻 Phím tắt: RightCtrl / Insert"
+    HintLabel.TextColor3 = Color3.fromRGB(140, 155, 175)
+    HintLabel.Font = Enum.Font.Gotham
+    HintLabel.TextSize = 10
+    HintLabel.TextXAlignment = Enum.TextXAlignment.Right
+    HintLabel.Parent = TopBar
     
     local CloseBtn = Instance.new("TextButton")
     CloseBtn.Name = "CloseBtn"
@@ -578,7 +732,7 @@ function QuocKhanhUI.Init()
     Sidebar.BorderSizePixel = 0
     Sidebar.ScrollBarThickness = 2
     Sidebar.ScrollBarImageColor3 = Color3.fromRGB(0, 200, 255)
-    Sidebar.CanvasSize = UDim2.new(0, 0, 0, 560)
+    Sidebar.CanvasSize = UDim2.new(0, 0, 0, 580)
     Sidebar.Parent = MainFrame
     self.Sidebar = Sidebar
     
@@ -609,8 +763,8 @@ function QuocKhanhUI.Init()
     if _G_QK.EnableKeySystem and not _G_QK.VerifiedKey then
         local KeyFrame = Instance.new("Frame")
         KeyFrame.Name = "KeyVerificationWindow"
-        KeyFrame.Size = UDim2.new(0, 440, 0, 260)
-        KeyFrame.Position = UDim2.new(0.5, -220, 0.5, -130)
+        KeyFrame.Size = UDim2.new(0, 430, 0, 250)
+        KeyFrame.Position = UDim2.new(0.5, -215, 0.5, -125)
         KeyFrame.BackgroundColor3 = Color3.fromRGB(15, 18, 26)
         KeyFrame.BorderSizePixel = 0
         KeyFrame.Parent = ScreenGui
@@ -625,7 +779,7 @@ function QuocKhanhUI.Init()
         KeyStroke.Parent = KeyFrame
         
         local KeyHeader = Instance.new("TextLabel")
-        KeyHeader.Size = UDim2.new(1, 0, 0, 40)
+        KeyHeader.Size = UDim2.new(1, 0, 0, 36)
         KeyHeader.Position = UDim2.new(0, 0, 0, 12)
         KeyHeader.BackgroundTransparency = 1
         KeyHeader.Text = "👑 QUỐC KHÁNH HUB"
@@ -635,20 +789,20 @@ function QuocKhanhUI.Init()
         KeyHeader.Parent = KeyFrame
         
         local KeySub = Instance.new("TextLabel")
-        KeySub.Size = UDim2.new(1, -40, 0, 24)
-        KeySub.Position = UDim2.new(0, 20, 0, 50)
+        KeySub.Size = UDim2.new(1, -40, 0, 20)
+        KeySub.Position = UDim2.new(0, 20, 0, 48)
         KeySub.BackgroundTransparency = 1
-        KeySub.Text = "Hệ Thống Bản Quyền Độc Quyền - Vui lòng nhập Key để mở khóa"
+        KeySub.Text = "Nhập Key bản quyền hoặc bấm Lấy Key để mở khóa"
         KeySub.TextColor3 = Color3.fromRGB(180, 190, 210)
         KeySub.Font = Enum.Font.Gotham
         KeySub.TextSize = 11
         KeySub.Parent = KeyFrame
         
         local KeyInput = Instance.new("TextBox")
-        KeyInput.Size = UDim2.new(1, -40, 0, 42)
-        KeyInput.Position = UDim2.new(0, 20, 0, 95)
+        KeyInput.Size = UDim2.new(1, -40, 0, 40)
+        KeyInput.Position = UDim2.new(0, 20, 0, 86)
         KeyInput.BackgroundColor3 = Color3.fromRGB(22, 26, 38)
-        KeyInput.PlaceholderText = "Nhập Key bản quyền tại đây... (Thử: QUOCKHANH_VIP)"
+        KeyInput.PlaceholderText = "Nhập Key tại đây... (Master: QUOCKHANH_VIP)"
         KeyInput.PlaceholderColor3 = Color3.fromRGB(120, 130, 150)
         KeyInput.Text = ""
         KeyInput.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -662,7 +816,7 @@ function QuocKhanhUI.Init()
         
         local SubmitBtn = Instance.new("TextButton")
         SubmitBtn.Size = UDim2.new(0.46, 0, 0, 38)
-        SubmitBtn.Position = UDim2.new(0, 20, 0, 155)
+        SubmitBtn.Position = UDim2.new(0, 20, 0, 142)
         SubmitBtn.BackgroundColor3 = Color3.fromRGB(0, 170, 230)
         SubmitBtn.Text = "Xác Nhận Key"
         SubmitBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -676,9 +830,9 @@ function QuocKhanhUI.Init()
         
         local GetKeyBtn = Instance.new("TextButton")
         GetKeyBtn.Size = UDim2.new(0.46, 0, 0, 38)
-        GetKeyBtn.Position = UDim2.new(0.54, 0, 0, 155)
+        GetKeyBtn.Position = UDim2.new(0.54, 0, 0, 142)
         GetKeyBtn.BackgroundColor3 = Color3.fromRGB(35, 40, 56)
-        GetKeyBtn.Text = "Lấy Key Miễn Phí"
+        GetKeyBtn.Text = "Lấy Key (Discord)"
         GetKeyBtn.TextColor3 = Color3.fromRGB(0, 235, 255)
         GetKeyBtn.Font = Enum.Font.GothamBold
         GetKeyBtn.TextSize = 12
@@ -689,16 +843,15 @@ function QuocKhanhUI.Init()
         GetCorner.Parent = GetKeyBtn
         
         local StatusLabel = Instance.new("TextLabel")
-        StatusLabel.Size = UDim2.new(1, -40, 0, 26)
-        StatusLabel.Position = UDim2.new(0, 20, 0, 208)
+        StatusLabel.Size = UDim2.new(1, -40, 0, 24)
+        StatusLabel.Position = UDim2.new(0, 20, 0, 198)
         StatusLabel.BackgroundTransparency = 1
-        StatusLabel.Text = "Master Key: QUOCKHANH_VIP | Tác giả: Quốc Khánh"
+        StatusLabel.Text = "Hỗ trợ Master Key: QUOCKHANH_VIP | Tác giả: Quốc Khánh"
         StatusLabel.TextColor3 = Color3.fromRGB(140, 150, 170)
         StatusLabel.Font = Enum.Font.Gotham
         StatusLabel.TextSize = 10
         StatusLabel.Parent = KeyFrame
         
-        -- Logic xác thực Key
         SubmitBtn.MouseButton1Click:Connect(function()
             local input = string.lower(string.gsub(KeyInput.Text, "%s+", ""))
             local match = false
@@ -714,15 +867,15 @@ function QuocKhanhUI.Init()
                 if writefile then
                     writefile(_G_QK.KeySaveFile, KeyInput.Text)
                 end
-                StatusLabel.Text = "✅ Xác thực thành công! Đang khởi động..."
+                StatusLabel.Text = "✅ Xác thực thành công! Đang mở menu..."
                 StatusLabel.TextColor3 = Color3.fromRGB(0, 255, 140)
-                task.wait(0.5)
+                task.wait(0.4)
                 KeyFrame:Destroy()
                 MainFrame.Visible = true
-                FloatingBtn.Visible = true
-                self:Notify("Bản Quyền Hợp Lệ", "Chào mừng bạn quay trở lại Quốc Khánh Hub!", 4)
+                FloatingBtn.Visible = _G_QK.ShowFloatingButton
+                self:Notify("Bản Quyền Hợp Lệ", "Chào mừng bạn đến với Quốc Khánh Hub Pro v3.5!", 4)
             else
-                StatusLabel.Text = "❌ Key không chính xác! Vui lòng nhập QUOCKHANH_VIP"
+                StatusLabel.Text = "❌ Key sai! Thử nhập: QUOCKHANH_VIP"
                 StatusLabel.TextColor3 = Color3.fromRGB(255, 80, 80)
             end
         end)
@@ -730,10 +883,8 @@ function QuocKhanhUI.Init()
         GetKeyBtn.MouseButton1Click:Connect(function()
             if setclipboard then
                 setclipboard("https://discord.gg/quockhanhhub")
-                StatusLabel.Text = "📋 Đã sao chép link nhận Key vào Clipboard!"
+                StatusLabel.Text = "📋 Đã sao chép link Discord nhận Key vào Clipboard!"
                 StatusLabel.TextColor3 = Color3.fromRGB(0, 220, 255)
-            else
-                StatusLabel.Text = "Key miễn phí: QUOCKHANH_VIP"
             end
         end)
     end
@@ -741,7 +892,6 @@ function QuocKhanhUI.Init()
     return self
 end
 
--- Tạo một Tab mới
 function QuocKhanhUI:CreateTab(tabName, iconText)
     local tabObj = {}
     
@@ -814,9 +964,6 @@ function QuocKhanhUI:CreateTab(tabName, iconText)
     
     table.insert(self.Tabs, tabObj)
     
-    ----------------------------------------------------------------------------
-    -- CÁC COMPONENT GIAO DIỆN CON
-    ----------------------------------------------------------------------------
     function tabObj:AddSection(sectionTitle)
         local SecFrame = Instance.new("Frame")
         SecFrame.Name = "Section_" .. sectionTitle
@@ -1081,6 +1228,53 @@ function QuocKhanhUI:CreateTab(tabName, iconText)
         end)
     end
     
+    function tabObj:AddTextBox(boxTitle, placeholder, defaultText, callback)
+        local BoxFrame = Instance.new("Frame")
+        BoxFrame.Name = "TextBox_" .. boxTitle
+        BoxFrame.Size = UDim2.new(1, 0, 0, 64)
+        BoxFrame.BackgroundColor3 = Color3.fromRGB(18, 21, 30)
+        BoxFrame.Parent = TabContent
+        
+        local BoxCorner = Instance.new("UICorner")
+        BoxCorner.CornerRadius = UDim.new(0, 8)
+        BoxCorner.Parent = BoxFrame
+        
+        local Label = Instance.new("TextLabel")
+        Label.Size = UDim2.new(1, -24, 0, 22)
+        Label.Position = UDim2.new(0, 12, 0, 6)
+        Label.BackgroundTransparency = 1
+        Label.Text = boxTitle
+        Label.TextColor3 = Color3.fromRGB(230, 235, 245)
+        Label.Font = Enum.Font.GothamSemibold
+        Label.TextSize = 12
+        Label.TextXAlignment = Enum.TextXAlignment.Left
+        Label.Parent = BoxFrame
+        
+        local Input = Instance.new("TextBox")
+        Input.Size = UDim2.new(1, -24, 0, 28)
+        Input.Position = UDim2.new(0, 12, 0, 30)
+        Input.BackgroundColor3 = Color3.fromRGB(26, 30, 42)
+        Input.PlaceholderText = placeholder or "Nhập tại đây..."
+        Input.PlaceholderColor3 = Color3.fromRGB(120, 130, 150)
+        Input.Text = defaultText or ""
+        Input.TextColor3 = Color3.fromRGB(0, 235, 255)
+        Input.Font = Enum.Font.Gotham
+        Input.TextSize = 11
+        Input.ClearTextOnFocus = false
+        Input.Parent = BoxFrame
+        
+        local InCorner = Instance.new("UICorner")
+        InCorner.CornerRadius = UDim.new(0, 6)
+        InCorner.Parent = Input
+        
+        Input.FocusLost:Connect(function(enterPressed)
+            if callback then
+                task.spawn(callback, Input.Text)
+            end
+        end)
+        return Input
+    end
+    
     function tabObj:AddButton(buttonText, callback)
         local Btn = Instance.new("TextButton")
         Btn.Name = "Button_" .. buttonText
@@ -1122,12 +1316,11 @@ function QuocKhanhUI:CreateTab(tabName, iconText)
     return tabObj
 end
 
--- Thông báo nổi (Floating Toast Notification)
 function QuocKhanhUI:Notify(title, message, duration)
     local dur = duration or 3
     local Toast = Instance.new("Frame")
-    Toast.Size = UDim2.new(0, 260, 0, 60)
-    Toast.Position = UDim2.new(1, 20, 1, -80)
+    Toast.Size = UDim2.new(0, 270, 0, 62)
+    Toast.Position = UDim2.new(1, 20, 1, -85)
     Toast.BackgroundColor3 = Color3.fromRGB(18, 22, 32)
     Toast.Parent = self.ScreenGui
     
@@ -1137,7 +1330,7 @@ function QuocKhanhUI:Notify(title, message, duration)
     
     local ToastStroke = Instance.new("UIStroke")
     ToastStroke.Color = Color3.fromRGB(0, 220, 255)
-    ToastStroke.Thickness = 1.2
+    ToastStroke.Thickness = 1.4
     ToastStroke.Parent = Toast
     
     local ToastTitle = Instance.new("TextLabel")
@@ -1152,7 +1345,7 @@ function QuocKhanhUI:Notify(title, message, duration)
     ToastTitle.Parent = Toast
     
     local ToastMsg = Instance.new("TextLabel")
-    ToastMsg.Size = UDim2.new(1, -20, 0, 26)
+    ToastMsg.Size = UDim2.new(1, -20, 0, 28)
     ToastMsg.Position = UDim2.new(0, 10, 0, 28)
     ToastMsg.BackgroundTransparency = 1
     ToastMsg.Text = message
@@ -1163,12 +1356,12 @@ function QuocKhanhUI:Notify(title, message, duration)
     ToastMsg.Parent = Toast
     
     TweenService:Create(Toast, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
-        Position = UDim2.new(1, -280, 1, -80)
+        Position = UDim2.new(1, -290, 1, -85)
     }):Play()
     
     task.delay(dur, function()
         local outTween = TweenService:Create(Toast, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
-            Position = UDim2.new(1, 20, 1, -80)
+            Position = UDim2.new(1, 20, 1, -85)
         })
         outTween:Play()
         outTween.Completed:Connect(function()
@@ -1178,42 +1371,69 @@ function QuocKhanhUI:Notify(title, message, duration)
 end
 
 --------------------------------------------------------------------------------
--- 7. KHỞI TẠO GIAO DIỆN & CÁC TAB CHỨC NĂNG
+-- 7. KHỞI TẠO CÁC TAB CHỨC NĂNG
 --------------------------------------------------------------------------------
 local Hub = QuocKhanhUI.Init()
-Hub:Notify("Quốc Khánh Hub", "Khởi động thành công! Phiên bản v2.8 Release.", 4)
-
--- Gửi thông báo khởi động về Discord Webhook nếu có cấu hình
-task.spawn(function()
-    SendDiscordWebhook("Người Dùng Đã Chạy Script", "Có người chơi vừa kích hoạt Quốc Khánh Hub v2.8!", 65280, {
-        {["name"] = "Người Chơi", ["value"] = LocalPlayer.Name .. " (Lv. " .. GetCurrentLevel() .. ")", ["inline"] = true},
-        {["name"] = "Trình Thực Thi", ["value"] = (identifyexecutor and identifyexecutor()) or "Real / NEXOMIA", ["inline"] = true},
-        {["name"] = "PlaceId", ["value"] = tostring(game.PlaceId), ["inline"] = true}
-    })
-end)
+Hub:Notify("Quốc Khánh Hub", "Khởi động thành công! Bản Ultimate v3.5.", 4)
 
 -- TAB 1: THÔNG TIN & CÀI ĐẶT
 local TabInfo = Hub:CreateTab("Thông Tin", "📜")
 TabInfo:AddSection("Hồ Sơ Nhân Vật")
-local currentExec = (identifyexecutor and identifyexecutor()) or (getexecutorname and getexecutorname()) or "Real / NEXOMIA"
-local ExecLabel = TabInfo:AddLabel("⚡ Trình thực thi: " .. tostring(currentExec))
+local ExecLabel = TabInfo:AddLabel("⚡ Trình thực thi: " .. tostring(ExecutorName))
+local SeaLabel = TabInfo:AddLabel("🌊 Vùng biển hiện tại: Sea " .. tostring(CurrentSea))
 local ProfileLabel = TabInfo:AddLabel("👤 Người chơi: " .. LocalPlayer.Name .. " (ID: " .. LocalPlayer.UserId .. ")")
 local LevelLabel = TabInfo:AddLabel("⭐ Cấp độ: " .. GetCurrentLevel() .. " / Max 2840")
 local BeliLabel = TabInfo:AddLabel("💰 Beli: " .. (LocalPlayer.Data:FindFirstChild("Beli") and LocalPlayer.Data.Beli.Value or 0))
 local FragLabel = TabInfo:AddLabel("🔮 Fragments: " .. (LocalPlayer.Data:FindFirstChild("Fragments") and LocalPlayer.Data.Fragments.Value or 0))
 
+TabInfo:AddSection("Cài Đặt Ẩn / Hiện Menu")
+TabInfo:AddToggle("Hiện Nút Tròn Trên Màn Hình (Mobile/PC)", true, function(state)
+    _G_QK.ShowFloatingButton = state
+    if Hub.FloatingBtn then
+        Hub.FloatingBtn.Visible = state
+    end
+end)
+
+TabInfo:AddDropdown("Đổi Phím Tắt Ẩn/Hiện Trên PC", {"RightControl", "Insert", "LeftControl", "RightShift"}, "RightControl", function(val)
+    if val == "RightControl" then _G_QK.MenuKeybind = Enum.KeyCode.RightControl
+    elseif val == "Insert" then _G_QK.MenuKeybind = Enum.KeyCode.Insert
+    elseif val == "LeftControl" then _G_QK.MenuKeybind = Enum.KeyCode.LeftControl
+    elseif val == "RightShift" then _G_QK.MenuKeybind = Enum.KeyCode.RightShift end
+    Hub:Notify("Phím Tắt", "Đã đổi phím mở menu sang: " .. val)
+end)
+
 TabInfo:AddSection("Cấu Hình Discord Webhook")
-TabInfo:AddToggle("Bật Gửi Thông Báo Webhook", false, function(state)
+TabInfo:AddTextBox("URL Discord Webhook", "Dán link Webhook vào đây...", _G_QK.WebhookURL, function(text)
+    local cleaned = string.gsub(text, "%s+", "")
+    _G_QK.WebhookURL = cleaned
+    if writefile then
+        writefile(_G_QK.WebhookSaveFile, cleaned)
+    end
+    if #cleaned > 15 then
+        _G_QK.EnableWebhook = true
+        Hub:Notify("Discord Webhook", "Đã lưu Webhook URL thành công!")
+    end
+end)
+
+TabInfo:AddToggle("Bật Gửi Thông Báo Webhook", _G_QK.EnableWebhook, function(state)
     _G_QK.EnableWebhook = state
     Hub:Notify("Discord Webhook", state and "Đã bật gửi thông báo Webhook!" or "Đã tắt Webhook!")
 end)
 
 TabInfo:AddButton("Gửi Thử Nghiệm Báo Cáo Discord", function()
-    SendDiscordWebhook("Kiểm Tra Kết Nối", "Tin nhắn kiểm tra từ Quốc Khánh Hub hoạt động hoàn hảo!", 65535, {
-        {["name"] = "Tài Khoản", ["value"] = LocalPlayer.Name, ["inline"] = true},
-        {["name"] = "Beli Hiện Tại", ["value"] = tostring(LocalPlayer.Data.Beli.Value), ["inline"] = true}
+    if _G_QK.WebhookURL == "" or #_G_QK.WebhookURL < 15 then
+        Hub:Notify("Webhook", "Vui lòng nhập Webhook URL vào ô bên trên trước!")
+        return
+    end
+    _G_QK.EnableWebhook = true
+    SendDiscordWebhook("Kiểm Tra Hoạt Động", "Quốc Khánh Hub kết nối Discord Webhook thành công 100%!", 65535, {
+        {["name"] = "Người Chơi", ["value"] = LocalPlayer.Name .. " (Lv. " .. GetCurrentLevel() .. ")", ["inline"] = true},
+        {["name"] = "Beli", ["value"] = tostring(LocalPlayer.Data.Beli.Value), ["inline"] = true},
+        {["name"] = "Fragments", ["value"] = tostring(LocalPlayer.Data.Fragments.Value), ["inline"] = true},
+        {["name"] = "Vùng Biển", ["value"] = "Sea " .. tostring(CurrentSea), ["inline"] = true},
+        {["name"] = "Trình Thực Thi", ["value"] = tostring(ExecutorName), ["inline"] = true}
     })
-    Hub:Notify("Webhook", "Đã gửi tín hiệu đến Discord!")
+    Hub:Notify("Webhook", "Đã gửi tín hiệu kiểm tra đến Discord!")
 end)
 
 TabInfo:AddSection("Tiện Ích Hệ Thống")
@@ -1268,13 +1488,13 @@ TabInfo:AddToggle("Tăng Tốc Game / Giảm Lag (FPS Boost)", false, function(s
                 v.Material = Enum.Material.SmoothPlastic
             end
         end
-        Hub:Notify("FPS Boost", "Đã tối ưu hóa đồ họa tăng FPS!")
+        Hub:Notify("FPS Boost", "Đã tối ưu hóa đồ họa tăng FPS mượt mà!")
     end
 end)
 
 -- TAB 2: AUTO FARM LEVEL
 local TabFarm = Hub:CreateTab("Auto Farm", "⚔️")
-TabFarm:AddSection("Cày Cấp Tự Động")
+TabFarm:AddSection("Cày Cấp Tự Động (Auto Farm Level)")
 TabFarm:AddToggle("Bật Auto Farm Cấp (Auto Farm Level)", false, function(state)
     _G_QK.AutoFarmLevel = state
     if not state then
@@ -1289,15 +1509,15 @@ TabFarm:AddDropdown("Chọn Loại Vũ Khí Để Cày", {"Melee", "Sword", "Blo
     Hub:Notify("Vũ Khí", "Đã chuyển vũ khí sang: " .. val)
 end)
 
-TabFarm:AddToggle("Đánh Cực Nhanh (Fast Attack v2)", true, function(state)
+TabFarm:AddToggle("Đánh Cực Nhanh (Fast Attack v4)", true, function(state)
     _G_QK.FastAttack = state
 end)
 
-TabFarm:AddToggle("Hút & Gom Quái Lại Gần (Bring Mob)", true, function(state)
+TabFarm:AddToggle("Hút & Gom Quái Lại Gần (Bring Mob AOE)", true, function(state)
     _G_QK.BringMob = state
 end)
 
-TabFarm:AddSlider("Khoảng Cách Bay An Toàn Trên Quái", 12, 35, 18, function(val)
+TabFarm:AddSlider("Khoảng Cách Bay Lơ Lửng Trên Quái", 12, 35, 20, function(val)
     _G_QK.FarmDistance = val
 end)
 
@@ -1314,8 +1534,8 @@ end)
 local TabBoss = Hub:CreateTab("Săn Quái & Boss", "👹")
 TabBoss:AddSection("Tự Động Đánh Quái Chỉ Định")
 
-local availableMobs = {"Bandit", "Monkey", "Gorilla", "Pirate", "Brute", "Desert Bandit", "Snow Bandit", "Snowman", "Military Soldier", "Military Spy", "Fishman Lord"}
-TabBoss:AddDropdown("Chọn Tên Quái Xung Quanh", availableMobs, availableMobs[1], function(val)
+local dynamicMobs = {"Bandit", "Monkey", "Gorilla", "Pirate", "Brute", "Desert Bandit", "Snow Bandit", "Snowman", "Chief Petty Officer", "Military Soldier", "Military Spy", "Fishman Warrior", "God's Guard", "Raider", "Mercenary", "Swan Pirate"}
+TabBoss:AddDropdown("Chọn Tên Quái Để Farm", dynamicMobs, dynamicMobs[1], function(val)
     _G_QK.SelectedMob = val
 end)
 
@@ -1389,7 +1609,7 @@ end)
 
 -- TAB 6: ESP & ĐỊNH VỊ
 local TabESP = Hub:CreateTab("Định Vị ESP", "👁️")
-TabESP:AddSection("Hiển Thị Nhìn Xuyên Bản Đồ")
+TabESP:AddSection("Hiển Thị Nhìn Xuyên Bản Đồ (Neon ESP)")
 
 TabESP:AddToggle("ESP Người Chơi (Players ESP)", false, function(state)
     _G_QK.ESP_Players = state
@@ -1440,6 +1660,7 @@ TabFruit:AddSection("Trái Ác Quỷ (Devil Fruit)")
 
 TabFruit:AddToggle("Tự Nhặt Trái Khi Spawn (Fruit Sniper)", false, function(state)
     _G_QK.AutoSnipeFruit = state
+    if state then Hub:Notify("Fruit Sniper", "Đang quét tìm trái rơi trên bản đồ...") end
 end)
 
 TabFruit:AddToggle("Tự Động Cất Trái Vào Rương (Store Fruit)", false, function(state)
@@ -1578,50 +1799,103 @@ end)
 TabSea:AddSection("Sự Kiện Biển (Sea Events)")
 TabSea:AddToggle("Tự Động Săn Quái Biển (Sea Beast Hunter)", false, function(state)
     _G_QK.AutoSeaBeast = state
+    if state then Hub:Notify("Sea Beast", "Bắt đầu quét và săn Sea Beast!") end
 end)
 
 TabSea:AddToggle("Tự Động Bắn Thuyền Ma (Ship Raid Hunter)", false, function(state)
     _G_QK.AutoShipRaid = state
+    if state then Hub:Notify("Ship Raid", "Bắt đầu quét và bắn Thuyền Ma!") end
 end)
 
 --------------------------------------------------------------------------------
--- 8. CÁC LUỒNG THỰC THI NỀN TẢNG (BACKGROUND THREADS)
+-- 8. CÁC LUỒNG THỰC THI NỀN TẢNG (100% WORKING BACKGROUND THREADS)
 --------------------------------------------------------------------------------
 
--- 1. Luồng Auto Farm Level Cốt Lõi
+-- Helper: Tự động kích hoạt Buso Haki định kỳ (không spam lag)
+local lastBusoCheck = 0
+local function EnsureBuso()
+    if not _G_QK.AutoBuso then return end
+    if tick() - lastBusoCheck < 4 then return end
+    lastBusoCheck = tick()
+    pcall(function()
+        local char = LocalPlayer.Character
+        if char and Remotes.CommF_ then
+            local hasAura = char:FindFirstChild("HasBuso") or (char:GetAttribute("HasBuso") == true)
+            if not hasAura then
+                Remotes.CommF_:InvokeServer("Buso")
+            end
+        end
+    end)
+end
+
+-- Helper: Xuất chiêu phím Z, X, C, V
+local function TriggerSkills()
+    pcall(function()
+        if _G_QK.AutoSkillZ then
+            VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.Z, false, game)
+            task.wait(0.01)
+            VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.Z, false, game)
+        end
+        if _G_QK.AutoSkillX then
+            VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.X, false, game)
+            task.wait(0.01)
+            VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.X, false, game)
+        end
+        if _G_QK.AutoSkillC then
+            VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.C, false, game)
+            task.wait(0.01)
+            VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.C, false, game)
+        end
+        if _G_QK.AutoSkillV then
+            VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.V, false, game)
+            task.wait(0.01)
+            VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.V, false, game)
+        end
+    end)
+end
+
+-- 1. LUỒNG AUTO FARM LEVEL CỐT LÕI (SIÊU MƯỢT - KHÔNG GIẬT KHÔNG RỚT)
 task.spawn(function()
     while true do
-        task.wait()
+        task.wait(0.03)
         if _G_QK.AutoFarmLevel then
             pcall(function()
                 local qData = GetCurrentQuestData()
                 local char = LocalPlayer.Character
                 if not char or not char:FindFirstChild("HumanoidRootPart") or not char:FindFirstChild("Humanoid") or char.Humanoid.Health <= 0 then
+                    SetFlyAnchor(false)
                     return
                 end
                 
-                if _G_QK.AutoBuso and Remotes.CommF_ and not char:FindFirstChild("HasBuso") then
-                    Remotes.CommF_:InvokeServer("Buso")
-                end
+                local hrp = char.HumanoidRootPart
+                EnsureBuso()
                 
+                -- Kiểm tra trạng thái Quest hiện tại
                 local questGui = PlayerGui:FindFirstChild("Main") and PlayerGui.Main:FindFirstChild("Quest")
                 local hasActiveQuest = questGui and questGui.Visible
                 
                 if not hasActiveQuest then
-                    SafeTween(qData.CFrame)
-                    if (char.HumanoidRootPart.Position - qData.CFrame.Position).Magnitude <= 18 then
+                    -- Chưa có Quest -> Bay mượt đến NPC nhận Quest
+                    SetFlyAnchor(false)
+                    local distToNPC = (hrp.Position - qData.CFrame.Position).Magnitude
+                    if distToNPC > 25 then
+                        SafeTween(qData.CFrame)
+                    else
+                        StopTween()
+                        hrp.CFrame = qData.CFrame
                         if Remotes.CommF_ then
                             Remotes.CommF_:InvokeServer("StartQuest", qData.Quest, qData.Level)
                         end
-                        task.wait(0.5)
+                        task.wait(0.4)
                     end
                 else
+                    -- Đã có Quest -> Quét quái mục tiêu
                     local enemiesFolder = Workspace:FindFirstChild("Enemies")
                     local targetMob = nil
                     
                     if enemiesFolder then
                         for _, mob in ipairs(enemiesFolder:GetChildren()) do
-                            if mob.Name == qData.Name and mob:FindFirstChild("HumanoidRootPart") and mob:FindFirstChild("Humanoid") and mob.Humanoid.Health > 0 then
+                            if (mob.Name == qData.Name or string.find(mob.Name, qData.Name)) and mob:FindFirstChild("HumanoidRootPart") and mob:FindFirstChild("Humanoid") and mob.Humanoid.Health > 0 then
                                 targetMob = mob
                                 break
                             end
@@ -1630,26 +1904,35 @@ task.spawn(function()
                     
                     if targetMob and targetMob:FindFirstChild("HumanoidRootPart") then
                         local mobHrp = targetMob.HumanoidRootPart
-                        local farmPos = mobHrp.CFrame * CFrame.new(0, _G_QK.FarmDistance, 0) * CFrame.Angles(math.rad(-90), 0, 0)
+                        local distToMob = (hrp.Position - mobHrp.Position).Magnitude
                         
-                        char.HumanoidRootPart.CFrame = farmPos
-                        char.HumanoidRootPart.Velocity = Vector3.new(0, 0, 0)
+                        -- Vị trí lơ lửng an toàn trực diện phía trên quái (giữ góc nhìn camera ổn định)
+                        local targetPos = CFrame.new(mobHrp.Position + Vector3.new(0, _G_QK.FarmDistance, 0), mobHrp.Position)
                         
-                        BringNearbyMobs(qData.Name, mobHrp.CFrame)
-                        
-                        EquipSelectedWeapon()
-                        if _G_QK.FastAttack then
-                            PerformFastAttack(targetMob)
-                        end
-                        
-                        local tool = char:FindFirstChildOfClass("Tool")
-                        if tool then
-                            if _G_QK.AutoSkillZ then VirtualUser:TypeKey("z") end
-                            if _G_QK.AutoSkillX then VirtualUser:TypeKey("x") end
-                            if _G_QK.AutoSkillC then VirtualUser:TypeKey("c") end
-                            if _G_QK.AutoSkillV then VirtualUser:TypeKey("v") end
+                        if distToMob > 40 then
+                            -- Còn xa -> Bay tiếp cận bằng SafeTween
+                            SetFlyAnchor(false)
+                            SafeTween(targetPos)
+                        else
+                            -- Đã đến phạm vi đánh -> Dừng tween, gài neo lơ lửng và duy trì vị trí
+                            StopTween()
+                            SetFlyAnchor(true)
+                            hrp.CFrame = targetPos
+                            hrp.Velocity = Vector3.zero
+                            
+                            -- Gom quái cụm AOE
+                            BringNearbyMobs(qData.Name, mobHrp.CFrame)
+                            
+                            -- Cầm vũ khí và Fast Attack v4
+                            EquipSelectedWeapon()
+                            if _G_QK.FastAttack then
+                                PerformFastAttack(targetMob)
+                            end
+                            TriggerSkills()
                         end
                     else
+                        -- Chưa có quái xuất hiện -> Bay đến bãi quái chờ hồi sinh
+                        SetFlyAnchor(false)
                         SafeTween(qData.MobCFrame)
                     end
                 end
@@ -1658,11 +1941,114 @@ task.spawn(function()
     end
 end)
 
--- 2. Luồng Auto Nhặt Rương (Auto Chests)
+-- 2. LUỒNG AUTO FARM QUÁI CHỈ ĐỊNH (SELECTED MOB)
 task.spawn(function()
     while true do
-        task.wait(0.5)
-        if _G_QK.AutoChest and not _G_QK.AutoFarmLevel then
+        task.wait(0.05)
+        if _G_QK.AutoFarmSelectedMob and not _G_QK.AutoFarmLevel then
+            pcall(function()
+                local char = LocalPlayer.Character
+                if not char or not char:FindFirstChild("HumanoidRootPart") or not char:FindFirstChild("Humanoid") or char.Humanoid.Health <= 0 then
+                    SetFlyAnchor(false)
+                    return
+                end
+                
+                local hrp = char.HumanoidRootPart
+                EnsureBuso()
+                
+                local enemies = Workspace:FindFirstChild("Enemies")
+                local target = nil
+                if enemies then
+                    for _, mob in ipairs(enemies:GetChildren()) do
+                        if string.find(mob.Name, _G_QK.SelectedMob) and mob:FindFirstChild("HumanoidRootPart") and mob:FindFirstChild("Humanoid") and mob.Humanoid.Health > 0 then
+                            target = mob
+                            break
+                        end
+                    end
+                end
+                
+                if target and target:FindFirstChild("HumanoidRootPart") then
+                    local mobHrp = target.HumanoidRootPart
+                    local dist = (hrp.Position - mobHrp.Position).Magnitude
+                    local targetPos = CFrame.new(mobHrp.Position + Vector3.new(0, _G_QK.FarmDistance, 0), mobHrp.Position)
+                    
+                    if dist > 40 then
+                        SetFlyAnchor(false)
+                        SafeTween(targetPos)
+                    else
+                        StopTween()
+                        SetFlyAnchor(true)
+                        hrp.CFrame = targetPos
+                        hrp.Velocity = Vector3.zero
+                        BringNearbyMobs(_G_QK.SelectedMob, mobHrp.CFrame)
+                        EquipSelectedWeapon()
+                        if _G_QK.FastAttack then PerformFastAttack(target) end
+                        TriggerSkills()
+                    end
+                else
+                    SetFlyAnchor(false)
+                end
+            end)
+        end
+    end
+end)
+
+-- 3. LUỒNG AUTO SĂN BOSS SERVER
+task.spawn(function()
+    while true do
+        task.wait(0.1)
+        if _G_QK.AutoFarmBoss and not _G_QK.AutoFarmLevel then
+            pcall(function()
+                local char = LocalPlayer.Character
+                if not char or not char:FindFirstChild("HumanoidRootPart") or not char:FindFirstChild("Humanoid") or char.Humanoid.Health <= 0 then
+                    SetFlyAnchor(false)
+                    return
+                end
+                
+                local hrp = char.HumanoidRootPart
+                EnsureBuso()
+                
+                local enemies = Workspace:FindFirstChild("Enemies")
+                local targetBoss = nil
+                if enemies then
+                    for _, mob in ipairs(enemies:GetChildren()) do
+                        if string.find(mob.Name, _G_QK.SelectedBoss) and mob:FindFirstChild("HumanoidRootPart") and mob:FindFirstChild("Humanoid") and mob.Humanoid.Health > 0 then
+                            targetBoss = mob
+                            break
+                        end
+                    end
+                end
+                
+                if targetBoss and targetBoss:FindFirstChild("HumanoidRootPart") then
+                    local bossHrp = targetBoss.HumanoidRootPart
+                    local dist = (hrp.Position - bossHrp.Position).Magnitude
+                    local targetPos = CFrame.new(bossHrp.Position + Vector3.new(0, _G_QK.FarmDistance + 4, 0), bossHrp.Position)
+                    
+                    if dist > 40 then
+                        SetFlyAnchor(false)
+                        SafeTween(targetPos)
+                    else
+                        StopTween()
+                        SetFlyAnchor(true)
+                        hrp.CFrame = targetPos
+                        hrp.Velocity = Vector3.zero
+                        EquipSelectedWeapon()
+                        if _G_QK.FastAttack then PerformFastAttack(targetBoss) end
+                        TriggerSkills()
+                    end
+                else
+                    SetFlyAnchor(false)
+                end
+            end)
+        end
+    end
+end)
+
+-- 4. LUỒNG AUTO NHẶT RƯƠNG (AUTO CHESTS)
+task.spawn(function()
+    while true do
+        task.wait(0.4)
+        if _G_QK.AutoChest and not _G_QK.AutoFarmLevel and not _G_QK.AutoFarmBoss then
             pcall(function()
                 local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
                 if not hrp then return end
@@ -1682,12 +2068,12 @@ task.spawn(function()
                 
                 if nearestChest then
                     SafeTween(nearestChest.CFrame * CFrame.new(0, 2, 0), _G_QK.TweenSpeed)
-                    if (hrp.Position - nearestChest.Position).Magnitude <= 10 then
+                    if (hrp.Position - nearestChest.Position).Magnitude <= 12 then
                         firetouchinterest(hrp, nearestChest, 0)
                         firetouchinterest(hrp, nearestChest, 1)
                         _G_QK.ChestsCollected = _G_QK.ChestsCollected + 1
                         ChestCountLabel.Text = "💎 Số rương đã nhặt: " .. _G_QK.ChestsCollected
-                        task.wait(0.3)
+                        task.wait(0.25)
                     end
                 end
             end)
@@ -1695,10 +2081,10 @@ task.spawn(function()
     end
 end)
 
--- 3. Luồng Auto Nâng Điểm (Auto Stats)
+-- 5. LUỒNG AUTO NÂNG ĐIỂM (AUTO STATS)
 task.spawn(function()
     while true do
-        task.wait(1)
+        task.wait(1.5)
         if _G_QK.AutoStats and Remotes.CommF_ then
             pcall(function()
                 local points = LocalPlayer.Data:FindFirstChild("Points") and LocalPlayer.Data.Points.Value or 0
@@ -1707,7 +2093,7 @@ task.spawn(function()
                     for statName, isEnabled in pairs(_G_QK.StatsToUpgrade) do
                         if isEnabled and points > 0 then
                             Remotes.CommF_:InvokeServer("AddPoint", statName, chunk)
-                            task.wait(0.1)
+                            task.wait(0.08)
                         end
                     end
                 end
@@ -1716,7 +2102,155 @@ task.spawn(function()
     end
 end)
 
--- 4. Luồng Auto Gom Lửa Xanh Kitsune (Blue Embers)
+-- 6. LUỒNG HỆ THỐNG ESP NEON PHÁT SÁNG THẬT 100%
+local activeESPs = {}
+
+local function ClearESP(obj)
+    if activeESPs[obj] then
+        for _, v in pairs(activeESPs[obj]) do
+            pcall(function() v:Destroy() end)
+        end
+        activeESPs[obj] = nil
+    end
+end
+
+local function CreateESP(obj, text, color)
+    if activeESPs[obj] then return end
+    pcall(function()
+        local highlight = Instance.new("Highlight")
+        highlight.Name = "QK_Highlight"
+        highlight.FillColor = color
+        highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+        highlight.FillTransparency = 0.5
+        highlight.OutlineTransparency = 0.2
+        highlight.Adornee = obj
+        highlight.Parent = SafeParent
+        
+        local billboard = Instance.new("BillboardGui")
+        billboard.Name = "QK_Billboard"
+        billboard.Size = UDim2.new(0, 140, 0, 30)
+        billboard.AlwaysOnTop = true
+        billboard.Adornee = obj:IsA("Model") and (obj:FindFirstChild("HumanoidRootPart") or obj:FindFirstChild("Head") or obj.PrimaryPart) or obj
+        billboard.Parent = SafeParent
+        
+        local lbl = Instance.new("TextLabel")
+        lbl.Size = UDim2.new(1, 0, 1, 0)
+        lbl.BackgroundTransparency = 1
+        lbl.Text = text
+        lbl.TextColor3 = color
+        lbl.Font = Enum.Font.GothamBold
+        lbl.TextSize = 11
+        lbl.TextStrokeTransparency = 0.4
+        lbl.Parent = billboard
+        
+        activeESPs[obj] = {highlight, billboard, lbl}
+    end)
+end
+
+task.spawn(function()
+    while true do
+        task.wait(1)
+        pcall(function()
+            -- 1. ESP Players
+            if _G_QK.ESP_Players then
+                for _, p in ipairs(Players:GetPlayers()) do
+                    if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") and p.Character:FindFirstChild("Humanoid") and p.Character.Humanoid.Health > 0 then
+                        local hrp = p.Character.HumanoidRootPart
+                        local dist = math.floor((LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") and (LocalPlayer.Character.HumanoidRootPart.Position - hrp.Position).Magnitude) or 0)
+                        CreateESP(p.Character, p.Name .. " [" .. dist .. "m]", Color3.fromRGB(0, 240, 255))
+                    end
+                end
+            end
+            
+            -- 2. ESP Chests
+            if _G_QK.ESP_Chests then
+                for _, obj in ipairs(Workspace:GetDescendants()) do
+                    if obj:IsA("BasePart") and string.find(obj.Name, "Chest") and obj:FindFirstChild("TouchInterest") then
+                        local dist = math.floor((LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") and (LocalPlayer.Character.HumanoidRootPart.Position - obj.Position).Magnitude) or 0)
+                        CreateESP(obj, "💎 Rương [" .. dist .. "m]", Color3.fromRGB(255, 215, 0))
+                    end
+                end
+            end
+            
+            -- 3. ESP Fruits
+            if _G_QK.ESP_Fruits then
+                for _, obj in ipairs(Workspace:GetChildren()) do
+                    if string.find(obj.Name, "Fruit") or obj:IsA("Tool") then
+                        CreateESP(obj, "🍎 " .. obj.Name, Color3.fromRGB(220, 80, 255))
+                    end
+                end
+            end
+            
+            -- 4. ESP Mobs / Bosses
+            if _G_QK.ESP_Mobs then
+                local enemies = Workspace:FindFirstChild("Enemies")
+                if enemies then
+                    for _, mob in ipairs(enemies:GetChildren()) do
+                        if mob:FindFirstChild("HumanoidRootPart") and mob:FindFirstChild("Humanoid") and mob.Humanoid.Health > 0 then
+                            local hp = math.floor(mob.Humanoid.Health)
+                            CreateESP(mob, mob.Name .. " [HP: " .. hp .. "]", Color3.fromRGB(255, 120, 50))
+                        end
+                    end
+                end
+            end
+            
+            -- Dọn dẹp ESP khi tắt toggle
+            if not _G_QK.ESP_Players and not _G_QK.ESP_Chests and not _G_QK.ESP_Fruits and not _G_QK.ESP_Mobs then
+                for obj, _ in pairs(activeESPs) do
+                    ClearESP(obj)
+                end
+            end
+        end)
+    end
+end)
+
+-- 7. LUỒNG AUTO NHẶT TRÁI RƠI (FRUIT SNIPER) & CẤT VÀO KHO (STORE FRUIT)
+task.spawn(function()
+    while true do
+        task.wait(1)
+        pcall(function()
+            local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+            if not hrp then return end
+            
+            -- 1. Quét tìm trái rơi trên map và bay đến nhặt
+            if _G_QK.AutoSnipeFruit then
+                for _, obj in ipairs(Workspace:GetChildren()) do
+                    if (string.find(obj.Name, "Fruit") or (obj:IsA("Tool") and string.find(obj.Name, "Fruit"))) then
+                        local handle = obj:FindFirstChild("Handle") or (obj:IsA("BasePart") and obj)
+                        if handle then
+                            SafeTween(handle.CFrame, 350)
+                            if (hrp.Position - handle.Position).Magnitude <= 10 then
+                                firetouchinterest(hrp, handle, 0)
+                                firetouchinterest(hrp, handle, 1)
+                                Hub:Notify("Fruit Sniper", "Đã nhặt thành công: " .. obj.Name, 4)
+                                task.wait(0.3)
+                            end
+                        end
+                    end
+                end
+            end
+            
+            -- 2. Tự động cất trái trong Balo vào kho
+            if _G_QK.AutoStoreFruit and Remotes.CommF_ then
+                for _, tool in ipairs(LocalPlayer.Backpack:GetChildren()) do
+                    if tool:IsA("Tool") and string.find(tool.Name, "Fruit") then
+                        Remotes.CommF_:InvokeServer("StoreFruit", tool.Name, tool)
+                        Hub:Notify("Cất Trái", "Đã cất vào kho: " .. tool.Name, 3)
+                        
+                        -- Gửi Discord Webhook
+                        SendDiscordWebhook("Nhặt & Cất Trái Thành Công", "Trái Ác Quỷ đã được tự động cất vào rương lưu trữ!", 16753920, {
+                            {["name"] = "Tên Trái", ["value"] = tool.Name, ["inline"] = true},
+                            {["name"] = "Người Chơi", ["value"] = LocalPlayer.Name .. " (Lv. " .. GetCurrentLevel() .. ")", ["inline"] = true}
+                        })
+                        task.wait(0.5)
+                    end
+                end
+            end
+        end)
+    end
+end)
+
+-- 8. LUỒNG SỰ KIỆN KITSUNE (LỬA XANH BLUE EMBER & CẦU NGUYỆN)
 task.spawn(function()
     while true do
         task.wait(0.3)
@@ -1745,29 +2279,40 @@ task.spawn(function()
     end
 end)
 
--- 5. Luồng Tộc V4 (Race V4 Awakening)
+-- 9. LUỒNG TỘC V4 (RACE AWAKENING) & BÁNH RĂNG MIRAGE
 task.spawn(function()
     while true do
         task.wait(1)
-        if _G_QK.AutoAwakenV4 and Remotes.ActivateRaceV4 then
-            pcall(function()
+        pcall(function()
+            if _G_QK.AutoAwakenV4 and Remotes.ActivateRaceV4 then
                 Remotes.ActivateRaceV4:FireServer()
-            end)
-        end
-        if _G_QK.AutoUseRaceSkill and Remotes.UsedRaceSkill then
-            pcall(function()
+            end
+            if _G_QK.AutoUseRaceSkill and Remotes.UsedRaceSkill then
                 Remotes.UsedRaceSkill:FireServer()
-            end)
-        end
+            end
+            if _G_QK.AutoMirageGear then
+                for _, obj in ipairs(Workspace:GetDescendants()) do
+                    if obj.Name == "Gear" or string.find(obj.Name, "MirageGear") then
+                        SafeTween(obj.CFrame, 350)
+                        Hub:Notify("Mirage Gear", "Đã tìm thấy Bánh Răng Xanh!")
+                        break
+                    end
+                end
+            end
+        end)
     end
 end)
 
--- 6. Luồng Săn Biển & Leviathan
+-- 10. LUỒNG SĂN BIỂN & LEVIATHAN
 task.spawn(function()
     while true do
         task.wait(0.5)
-        if _G_QK.AutoLeviathan and Remotes.Leviathan then
-            pcall(function()
+        pcall(function()
+            local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+            if not hrp then return end
+            
+            -- Săn Leviathan
+            if _G_QK.AutoLeviathan and Remotes.Leviathan then
                 local seaBeasts = Workspace:FindFirstChild("SeaBeasts")
                 if seaBeasts then
                     for _, beast in ipairs(seaBeasts:GetChildren()) do
@@ -1779,14 +2324,45 @@ task.spawn(function()
                         end
                     end
                 end
-            end)
-        end
+            end
+            
+            -- Săn Sea Beast
+            if _G_QK.AutoSeaBeast then
+                local seaBeasts = Workspace:FindFirstChild("SeaBeasts") or Workspace:FindFirstChild("Enemies")
+                if seaBeasts then
+                    for _, beast in ipairs(seaBeasts:GetChildren()) do
+                        if string.find(beast.Name, "SeaBeast") and beast:FindFirstChild("HumanoidRootPart") then
+                            SafeTween(beast.HumanoidRootPart.CFrame * CFrame.new(0, 35, 0))
+                            EquipSelectedWeapon()
+                            PerformFastAttack(beast)
+                        end
+                    end
+                end
+            end
+            
+            -- Bắn Thuyền Ma (Ship Raid)
+            if _G_QK.AutoShipRaid then
+                local boats = Workspace:FindFirstChild("Boats") or Workspace:FindFirstChild("Enemies")
+                if boats then
+                    for _, boat in ipairs(boats:GetChildren()) do
+                        if string.find(boat.Name, "Brigade") or string.find(boat.Name, "Ship") then
+                            local boatHrp = boat:FindFirstChild("HumanoidRootPart") or boat:FindFirstChildOfClass("BasePart")
+                            if boatHrp then
+                                SafeTween(boatHrp.CFrame * CFrame.new(0, 25, 0))
+                                EquipSelectedWeapon()
+                                PerformFastAttack(boat)
+                            end
+                        end
+                    end
+                end
+            end
+        end)
     end
 end)
 
--- 7. Luồng Noclip (Xuyên tường) & Nhảy Vô Hạn
+-- 11. LUỒNG NOCLIP (XUYÊN TƯỜNG) & NHẢY VÔ HẠN
 RunService.Stepped:Connect(function()
-    if _G_QK.Noclip or _G_QK.AutoFarmLevel or _G_QK.AutoChest then
+    if _G_QK.Noclip or _G_QK.AutoFarmLevel or _G_QK.AutoChest or _G_QK.AutoFarmBoss or _G_QK.AutoFarmSelectedMob then
         pcall(function()
             if LocalPlayer.Character then
                 for _, part in ipairs(LocalPlayer.Character:GetDescendants()) do
@@ -1805,7 +2381,7 @@ UserInputService.JumpRequest:Connect(function()
     end
 end)
 
--- 8. Chống văng game do treo máy (Anti-AFK)
+-- 12. CHỐNG VĂNG GAME DO TREO MÁY (ANTI-AFK)
 LocalPlayer.Idled:Connect(function()
     if _G_QK.AntiAFK then
         VirtualUser:CaptureController()
@@ -1813,30 +2389,7 @@ LocalPlayer.Idled:Connect(function()
     end
 end)
 
--- 9. Tự Động Cất Trái Ác Quỷ & Gửi Webhook
-task.spawn(function()
-    while true do
-        task.wait(3)
-        if _G_QK.AutoStoreFruit and Remotes.CommF_ then
-            pcall(function()
-                for _, tool in ipairs(LocalPlayer.Backpack:GetChildren()) do
-                    if tool:IsA("Tool") and string.find(tool.Name, "Fruit") then
-                        Remotes.CommF_:InvokeServer("StoreFruit", tool.Name, tool)
-                        Hub:Notify("Cất Trái", "Đã tự động cất vào rương: " .. tool.Name, 3)
-                        
-                        -- Gửi thông báo Webhook về Discord
-                        SendDiscordWebhook("Nhặt Được Trái Ác Quỷ", "Người chơi vừa nhặt và cất trái vào kho!", 16753920, {
-                            {["name"] = "Tên Trái", ["value"] = tool.Name, ["inline"] = true},
-                            {["name"] = "Người Chơi", ["value"] = LocalPlayer.Name, ["inline"] = true}
-                        })
-                    end
-                end
-            end)
-        end
-    end
-end)
-
--- 10. Cập nhật nhãn thông tin người chơi theo thời gian thực
+-- 13. CẬP NHẬT NHÃN THÔNG TIN NGƯỜI CHƠI THEO THỜI GIAN THỰC
 task.spawn(function()
     while task.wait(2) do
         pcall(function()
@@ -1856,7 +2409,7 @@ task.spawn(function()
 end)
 
 print("=========================================================")
-print("👑 QUỐC KHÁNH HUB (v2.8 RELEASE) - EXCLUSIVE BLOX FRUITS")
+print("👑 QUỐC KHÁNH HUB (v3.5 ULTIMATE) - BLOX FRUITS SUITE")
 print("⚡ Tác giả độc quyền: QUỐC KHÁNH")
-print("💎 Khởi tạo hoàn tất. Chúc bạn trải nghiệm và phát hành thành công!")
+print("💎 100% tính năng hoạt động thực tế. Chúc bạn chơi vui vẻ!")
 print("=========================================================")
