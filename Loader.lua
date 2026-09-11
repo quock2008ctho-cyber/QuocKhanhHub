@@ -1,6 +1,6 @@
 --[[
     ══════════════════════════════════════════════════════════════════════════════
-    👑 QUỐC KHÁNH HUB - UNIVERSAL ONLINE LOADER (v2.8)
+    👑 QUỐC KHÁNH HUB - UNIVERSAL ONLINE LOADER (v3.5 ULTIMATE)
     ══════════════════════════════════════════════════════════════════════════════
     • Tác giả độc quyền: QUỐC KHÁNH
     • Hỗ trợ đa nền tảng: PC (Real, NEXOMIA, Wave, Synapse Z, Solara) & Mobile (Delta, Codex, Hydrogen)
@@ -24,7 +24,7 @@ local Banner = [[
  | |_| | |_| | |_| | |___  | . \ |  _  |/ ___ \| |\  |  _  | |  _  | |_| | |_) |
   \__\_\\___/ \___/ \____| |_|\_\|_| |_/_/   \_\_| \_|_| |_| |_| |_|\___/|____/ 
                                                                                   
-  >> PHIÊN BẢN: v2.8 (EXCLUSIVE EDITION)
+  >> PHIÊN BẢN: v3.5 (ULTIMATE EDITION)
   >> TÁC GIẢ: QUỐC KHÁNH
   >> ĐANG KHỞI ĐỘNG HỆ THỐNG...
 ]]
@@ -89,7 +89,7 @@ local success, err = pcall(function()
 end)
 
 if success then
-    SendNotification("Quốc Khánh Hub", "Tải thành công! Chào mừng bạn đến với v2.8!", 5)
+    SendNotification("Quốc Khánh Hub", "Tải thành công! Chào mừng bạn đến với v3.5 Ultimate!", 5)
 else
     warn("[Quốc Khánh Hub] Lỗi khi tải script: " .. tostring(err))
     SendNotification("Lỗi Tải Script", "Vui lòng kiểm tra lại kết nối mạng hoặc thử lại!", 6)
